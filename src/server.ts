@@ -19,6 +19,7 @@ import {
 import { SessionManager } from "./services/sessionManager";
 import { TranscriptionService } from "./services/transcriptionService";
 import { AudioExtractionService } from "./services/audioExtractionService";
+import { JBADetectionService } from "./services/jbaDetectionService";
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +50,7 @@ requiredDirectories.forEach((dir) => {
 const sessionManager = new SessionManager();
 const transcriptionService = new TranscriptionService();
 const audioExtractionService = new AudioExtractionService();
+const jbaDetectionService = new JBADetectionService();
 
 // Configure Multer for file uploads (4.5GB limit)
 const storage = multer.diskStorage({
@@ -224,12 +226,42 @@ app.post("/api/transcribe", upload.single("video"), async (req, res) => {
           .pollTranscriptionStatus(transcriptionId, (status) => {
             sessionManager.updateSession(sessionId, { status: status as any });
           })
-          .then((results) => {
+          .then(async (results) => {
             // Transcription completed successfully
             sessionManager.updateSession(sessionId, {
               status: "completed",
               transcriptionResults: results,
             });
+
+            // Automatically trigger JBA detection if available
+            if (jbaDetectionService.isAvailable()) {
+              try {
+                console.log(
+                  `🏛️ Starting automatic JBA detection for session ${sessionId}...`
+                );
+                const jbaResults = await jbaDetectionService.detectJBACodes(
+                  results
+                );
+
+                sessionManager.updateSession(sessionId, {
+                  jbaResults: jbaResults,
+                });
+
+                console.log(
+                  `🏛️ Automatic JBA detection completed: ${jbaResults.length} codes found`
+                );
+              } catch (error) {
+                console.warn(
+                  `⚠️ Automatic JBA detection failed for session ${sessionId}:`,
+                  error
+                );
+                // Don't fail the whole transcription if JBA detection fails
+              }
+            } else {
+              console.log(
+                `⚠️ JBA detection not available - skipping automatic detection`
+              );
+            }
           })
           .catch((error) => {
             console.error(
@@ -512,6 +544,94 @@ app.get("/api/ffmpeg-status", async (req, res) => {
         available: false,
         error: "Could not check FFmpeg status",
       },
+    } as APIResponse);
+  }
+});
+
+/**
+ * Check JBA detection service availability
+ */
+app.get("/api/jba-status", (req, res) => {
+  try {
+    const status = jbaDetectionService.getStatus();
+    res.json({
+      success: true,
+      data: status,
+    } as APIResponse);
+  } catch (error) {
+    console.error("Error checking JBA status:", error);
+    res.json({
+      success: false,
+      data: {
+        available: false,
+        error: "Could not check JBA status",
+      },
+    } as APIResponse);
+  }
+});
+
+/**
+ * Manually trigger JBA detection for a session
+ */
+app.post("/api/detect-jba/:sessionId", async (req, res) => {
+  try {
+    const sessionId = req.params.sessionId;
+
+    console.log(`🏛️ Manual JBA detection requested for session: ${sessionId}`);
+
+    // Get session from storage
+    const session = sessionManager.getSession(sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: "Session not found",
+      } as APIResponse);
+    }
+
+    if (!session.transcriptionResults) {
+      return res.status(400).json({
+        success: false,
+        error: "No transcription results available for JBA detection",
+      } as APIResponse);
+    }
+
+    if (!jbaDetectionService.isAvailable()) {
+      return res.status(503).json({
+        success: false,
+        error: "JBA detection service not available - check OPENROUTER_API_KEY",
+      } as APIResponse);
+    }
+
+    // Trigger JBA detection
+    const jbaResults = await jbaDetectionService.detectJBACodes(
+      session.transcriptionResults,
+      {
+        confidenceThreshold: 0.6, // Slightly lower threshold for manual detection
+      }
+    );
+
+    // Update session with results
+    sessionManager.updateSession(sessionId, {
+      jbaResults: jbaResults,
+    });
+
+    console.log(
+      `✅ Manual JBA detection completed for session ${sessionId}: ${jbaResults.length} codes found`
+    );
+
+    res.json({
+      success: true,
+      data: {
+        sessionId: sessionId,
+        jbaResults: jbaResults,
+        message: `JBA detection completed: ${jbaResults.length} codes found`,
+      },
+    } as APIResponse);
+  } catch (error) {
+    console.error("Error in manual JBA detection:", error);
+    res.status(500).json({
+      success: false,
+      error: "JBA detection failed",
     } as APIResponse);
   }
 });

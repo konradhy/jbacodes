@@ -548,8 +548,64 @@ const ResultsView: React.FC<{
   session: TranscriptionSession;
   onBack: () => void;
 }> = ({ session, onBack }) => {
+  const [jbaDetecting, setJbaDetecting] = useState(false);
+  const [jbaAvailable, setJbaAvailable] = useState<boolean | null>(null);
+  const [currentSession, setCurrentSession] = useState(session);
+
   console.log("🎯 Rendering results for session:", session);
   console.log("🎯 Transcription results:", session.transcriptionResults);
+
+  // Check JBA service availability on component mount
+  useEffect(() => {
+    checkJBAStatus();
+  }, []);
+
+  const checkJBAStatus = async () => {
+    try {
+      const response = await fetch("/api/jba-status");
+      const result = await response.json();
+      setJbaAvailable(result.success && result.data?.available);
+    } catch (error) {
+      console.error("Error checking JBA status:", error);
+      setJbaAvailable(false);
+    }
+  };
+
+  const handleJBADetection = async () => {
+    if (!currentSession.id) return;
+
+    setJbaDetecting(true);
+    try {
+      console.log(
+        `🏛️ Triggering JBA detection for session: ${currentSession.id}`
+      );
+
+      const response = await fetch(`/api/detect-jba/${currentSession.id}`, {
+        method: "POST",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update current session with new JBA results
+        setCurrentSession({
+          ...currentSession,
+          jbaResults: result.data.jbaResults,
+        });
+
+        alert(
+          `JBA Detection Complete! Found ${result.data.jbaResults.length} codes.`
+        );
+      } else {
+        throw new Error(result.error || "JBA detection failed");
+      }
+    } catch (error) {
+      console.error("JBA detection error:", error);
+      alert("JBA detection failed. Please try again.");
+    } finally {
+      setJbaDetecting(false);
+    }
+  };
 
   return (
     <div className="results-view">
@@ -565,6 +621,27 @@ const ResultsView: React.FC<{
           <button className="btn btn-secondary" onClick={onBack}>
             ← Back to Sessions
           </button>
+          {jbaAvailable && currentSession.transcriptionResults && (
+            <button
+              className={`btn ${jbaDetecting ? "btn-disabled" : "btn-primary"}`}
+              onClick={handleJBADetection}
+              disabled={jbaDetecting}
+            >
+              {jbaDetecting ? (
+                <>
+                  <div className="spinner-small"></div>
+                  🔍 Detecting JBA Codes...
+                </>
+              ) : (
+                "🏛️ Detect JBA Codes"
+              )}
+            </button>
+          )}
+          {jbaAvailable === false && (
+            <div className="jba-status-info">
+              <small>💡 Add OPENROUTER_API_KEY to enable JBA detection</small>
+            </div>
+          )}
         </div>
       </div>
 
@@ -626,22 +703,68 @@ const ResultsView: React.FC<{
             <div className="panel-header">
               <h3>🏛️ JBA Codes</h3>
               <span className="badge">
-                {session.jbaResults?.length || 0} found
+                {currentSession.jbaResults?.length || 0} found
               </span>
             </div>
             <div className="panel-content">
-              {session.jbaResults && session.jbaResults.length > 0 ? (
+              {currentSession.jbaResults &&
+              currentSession.jbaResults.length > 0 ? (
                 <div className="jba-list">
-                  {session.jbaResults.map((jba, index) => (
-                    <div key={index} className="jba-item">
-                      <div className="jba-code">{jba.code}</div>
-                      <div className="jba-context">{jba.context}</div>
+                  {currentSession.jbaResults.map((jba, index) => (
+                    <div key={index} className="jba-item enhanced">
+                      <div className="jba-header">
+                        <div className="jba-code">{jba.code}</div>
+                        <div className="jba-confidence">
+                          {Math.round(jba.confidence * 100)}% confident
+                        </div>
+                      </div>
+                      <div className="jba-timing">
+                        <span className="jba-timestamp">
+                          🕐 {formatTimestamp(jba.timestamp)}
+                        </span>
+                        <span className="jba-type">{jba.variationType}</span>
+                      </div>
+                      <div className="jba-context">"{jba.context}"</div>
+                      <div className="jba-actions">
+                        <button
+                          className="btn btn-small btn-primary"
+                          onClick={() => {
+                            // TODO: Jump to video timestamp
+                            console.log(`Jump to ${jba.timestamp}ms`);
+                          }}
+                        >
+                          🎬 Jump to Code
+                        </button>
+                        <button
+                          className="btn btn-small btn-secondary"
+                          onClick={() => {
+                            navigator.clipboard.writeText(jba.code);
+                            alert("Code copied to clipboard!");
+                          }}
+                        >
+                          📋 Copy Code
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="empty-panel">
-                  <p>No JBA codes detected</p>
+                  <div className="empty-icon">🏛️</div>
+                  <h4>No JBA codes detected</h4>
+                  <p>
+                    {jbaAvailable
+                      ? "Click 'Detect JBA Codes' to analyze this transcript for CLE codes."
+                      : "JBA detection requires OPENROUTER_API_KEY configuration."}
+                  </p>
+                  {jbaAvailable && !jbaDetecting && (
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleJBADetection}
+                    >
+                      🔍 Analyze for JBA Codes
+                    </button>
+                  )}
                 </div>
               )}
             </div>
