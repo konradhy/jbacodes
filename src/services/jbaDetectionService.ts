@@ -35,10 +35,10 @@ export class JBADetectionService {
       contextWindow?: number;
       confidenceThreshold?: number;
     }
-  ): Promise<JBADetectionResult[]> {
+  ): Promise<{ codes: JBADetectionResult[]; expectedCount?: any }> {
     if (!this.openai) {
       console.warn("⚠️ JBA detection skipped - OpenRouter not configured");
-      return [];
+      return { codes: [] };
     }
 
     const contextWindow = options?.contextWindow || 50; // words around detection
@@ -71,13 +71,13 @@ export class JBADetectionService {
       const aiResponse = response.choices[0]?.message?.content;
       if (!aiResponse) {
         console.warn("⚠️ No response from AI model");
-        return [];
+        return { codes: [] };
       }
 
       console.log("🤖 AI Response received, parsing results...");
 
-      // Parse the AI response to extract JBA codes
-      const detectedCodes = this.parseAIResponse(
+      // Parse the AI response to extract JBA codes and count info
+      const { codes: detectedCodes, expectedCount } = this.parseAIResponse(
         aiResponse,
         transcriptionResults,
         contextWindow
@@ -101,7 +101,8 @@ export class JBADetectionService {
         });
       }
 
-      return filteredCodes;
+      // Return both codes and expected count info
+      return { codes: filteredCodes, expectedCount };
     } catch (error) {
       console.error("❌ JBA detection failed:", error);
       throw new Error(
@@ -124,8 +125,12 @@ CONTEXT:
 - Speakers typically announce when they're about to provide a code
 - Due to speech-to-text conversion, "JBA" may appear as various forms
 
-YOUR TASK:
-Analyze the transcript and identify all JBA codes with high accuracy. Look for:
+YOUR DUAL TASK:
+1. Identify all JBA codes with high accuracy
+2. Detect statements about the EXPECTED NUMBER of codes
+
+PART 1 - JBA CODE DETECTION:
+Look for these patterns:
 
 1. ANNOUNCEMENT PATTERNS (speakers often say):
    - "Here's your JBA code"
@@ -153,16 +158,50 @@ Analyze the transcript and identify all JBA codes with high accuracy. Look for:
    - Speaker may spell it out letter by letter
    - Often preceded by instructions to "write this down"
 
+PART 2 - CODE COUNT VERIFICATION:
+Also look for statements about how many codes to expect:
+
+1. EXPLICIT COUNT STATEMENTS:
+   - "There will be three codes today"
+   - "I have two codes for you"
+   - "This is the first of four codes"
+   - "Here's the second code"
+   - "This is the final code" / "last code"
+   - "Third and final code"
+   - "Only one code today"
+
+2. ORDINAL INDICATORS:
+   - "First code...", "Second code...", "Third code..."
+   - "Code number one", "Code number two"
+   - "Final code", "Last code"
+   - "Only code"
+
+3. QUANTITY PHRASES:
+   - "Both codes", "All three codes"
+   - "Each of the four codes"
+   - "The only code"
+
 RESPONSE FORMAT:
-Return a JSON array of detected codes. For each detection, provide:
+Return a JSON object with this structure:
 {
-  "code": "normalized_code_here",
-  "originalText": "exact_text_from_transcript",
-  "context": "surrounding_context_for_verification",
-  "confidence": 0.95,
-  "variationType": "standard|spaced|phonetic|spelled_out"
+  "codes": [
+    {
+      "code": "normalized_code_here",
+      "originalText": "exact_text_from_transcript",
+      "context": "surrounding_context_for_verification",
+      "confidence": 0.95,
+      "variationType": "standard|spaced|phonetic|spelled_out"
+    }
+  ],
+  "expectedCount": {
+    "count": 3,
+    "confidence": 0.9,
+    "evidence": "The speaker said 'third and final code'",
+    "context": "surrounding text that indicates the count"
+  }
 }
 
+If no count information is found, set expectedCount to null.
 Be thorough but precise. High confidence codes only. Include surrounding context for verification.`;
   }
 
@@ -197,19 +236,25 @@ Remember to look for announcement patterns, handle speech-to-text variations of 
     aiResponse: string,
     transcriptionResults: AssemblyAIResults,
     contextWindow: number
-  ): JBADetectionResult[] {
+  ): { codes: JBADetectionResult[]; expectedCount?: any } {
     try {
       // Extract JSON from the response (AI might include explanation text)
-      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        console.warn("⚠️ No JSON array found in AI response");
-        return [];
+        console.warn("⚠️ No JSON object found in AI response");
+        return { codes: [] };
       }
 
-      const detections = JSON.parse(jsonMatch[0]);
+      const response = JSON.parse(jsonMatch[0]);
+      const detections = response.codes || response; // Handle both new format and legacy array format
+      const expectedCount = response.expectedCount || null;
+
       const results: JBADetectionResult[] = [];
 
-      for (const detection of detections) {
+      // Handle legacy array format or new codes array
+      const codeArray = Array.isArray(detections) ? detections : [];
+
+      for (const detection of codeArray) {
         // Find the timestamp for this detection using word-level data
         const timestamp = this.findTimestampForCode(
           detection.originalText,
@@ -232,11 +277,21 @@ Remember to look for announcement patterns, handle speech-to-text variations of 
         }
       }
 
-      return results;
+      // Log expected count information
+      if (expectedCount) {
+        console.log(
+          `📊 Expected code count detected: ${
+            expectedCount.count
+          } (confidence: ${(expectedCount.confidence * 100).toFixed(1)}%)`
+        );
+        console.log(`📝 Evidence: "${expectedCount.evidence}"`);
+      }
+
+      return { codes: results, expectedCount };
     } catch (error) {
       console.error("❌ Failed to parse AI response:", error);
       console.log("Raw AI response:", aiResponse);
-      return [];
+      return { codes: [] };
     }
   }
 

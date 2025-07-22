@@ -10,6 +10,7 @@ export interface TranscriptionSession {
   assemblyaiId?: string;
   transcriptionResults?: AssemblyAIResults;
   jbaResults?: JBADetectionResult[];
+  expectedCodeCount?: number;
   videoUrl?: string;
   errorMessage?: string;
 }

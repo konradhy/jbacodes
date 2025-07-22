@@ -244,11 +244,12 @@ app.post("/api/transcribe", upload.single("video"), async (req, res) => {
                 );
 
                 sessionManager.updateSession(sessionId, {
-                  jbaResults: jbaResults,
+                  jbaResults: jbaResults.codes,
+                  expectedCodeCount: jbaResults.expectedCount?.count,
                 });
 
                 console.log(
-                  `🏛️ Automatic JBA detection completed: ${jbaResults.length} codes found`
+                  `🏛️ Automatic JBA detection completed: ${jbaResults.codes.length} codes found`
                 );
               } catch (error) {
                 console.warn(
@@ -612,19 +613,21 @@ app.post("/api/detect-jba/:sessionId", async (req, res) => {
 
     // Update session with results
     sessionManager.updateSession(sessionId, {
-      jbaResults: jbaResults,
+      jbaResults: jbaResults.codes,
+      expectedCodeCount: jbaResults.expectedCount?.count,
     });
 
     console.log(
-      `✅ Manual JBA detection completed for session ${sessionId}: ${jbaResults.length} codes found`
+      `✅ Manual JBA detection completed for session ${sessionId}: ${jbaResults.codes.length} codes found`
     );
 
     res.json({
       success: true,
       data: {
         sessionId: sessionId,
-        jbaResults: jbaResults,
-        message: `JBA detection completed: ${jbaResults.length} codes found`,
+        jbaResults: jbaResults.codes,
+        expectedCodeCount: jbaResults.expectedCount?.count,
+        message: `JBA detection completed: ${jbaResults.codes.length} codes found`,
       },
     } as APIResponse);
   } catch (error) {

@@ -451,6 +451,20 @@ body {
   height: auto;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-md);
+  background: #000;
+  transition: box-shadow 0.3s ease;
+}
+
+.video-player:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-color-alpha);
+}
+
+.video-controls-info {
+  text-align: center;
+  margin-top: var(--spacing-sm);
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 /* Main Results Layout */

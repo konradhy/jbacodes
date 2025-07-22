@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 
 // Types (we'll import these from the backend later)
@@ -551,6 +551,7 @@ const ResultsView: React.FC<{
   const [jbaDetecting, setJbaDetecting] = useState(false);
   const [jbaAvailable, setJbaAvailable] = useState<boolean | null>(null);
   const [currentSession, setCurrentSession] = useState(session);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   console.log("🎯 Rendering results for session:", session);
   console.log("🎯 Transcription results:", session.transcriptionResults);
@@ -568,6 +569,29 @@ const ResultsView: React.FC<{
     } catch (error) {
       console.error("Error checking JBA status:", error);
       setJbaAvailable(false);
+    }
+  };
+
+  const jumpToTimestamp = (timestampMs: number) => {
+    if (videoRef.current) {
+      const timestampSeconds = timestampMs / 1000;
+      videoRef.current.currentTime = timestampSeconds;
+      videoRef.current.focus();
+
+      // Visual feedback
+      console.log(`🎬 Jumping to ${formatTimestamp(timestampMs)}`);
+
+      // Optional: Auto-play for a few seconds to show context
+      videoRef.current
+        .play()
+        .then(() => {
+          setTimeout(() => {
+            videoRef.current?.pause();
+          }, 3000); // Play for 3 seconds then pause
+        })
+        .catch(console.error);
+    } else {
+      console.warn("Video player not available for timestamp jumping");
     }
   };
 
@@ -593,9 +617,20 @@ const ResultsView: React.FC<{
           jbaResults: result.data.jbaResults,
         });
 
-        alert(
-          `JBA Detection Complete! Found ${result.data.jbaResults.length} codes.`
-        );
+        // Check for count verification message
+        const expectedCount = result.data.expectedCodeCount;
+        const foundCount = result.data.jbaResults.length;
+
+        let message = `JBA Detection Complete! Found ${foundCount} codes.`;
+        if (expectedCount !== undefined) {
+          if (expectedCount === foundCount) {
+            message += ` ✅ This matches the expected count of ${expectedCount} codes.`;
+          } else {
+            message += ` ⚠️ Expected ${expectedCount} codes but found ${foundCount}. Please review the transcript.`;
+          }
+        }
+
+        alert(message);
       } else {
         throw new Error(result.error || "JBA detection failed");
       }
@@ -648,10 +683,21 @@ const ResultsView: React.FC<{
       {/* Video Player */}
       {session.videoUrl && (
         <div className="video-section">
-          <video controls className="video-player">
+          <video
+            ref={videoRef}
+            controls
+            className="video-player"
+            preload="metadata"
+          >
             <source src={session.videoUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
+          <div className="video-controls-info">
+            <small>
+              💡 Click any JBA code or chapter timestamp to jump to that moment
+              in the video
+            </small>
+          </div>
         </div>
       )}
 
@@ -728,10 +774,7 @@ const ResultsView: React.FC<{
                       <div className="jba-actions">
                         <button
                           className="btn btn-small btn-primary"
-                          onClick={() => {
-                            // TODO: Jump to video timestamp
-                            console.log(`Jump to ${jba.timestamp}ms`);
-                          }}
+                          onClick={() => jumpToTimestamp(jba.timestamp)}
                         >
                           🎬 Jump to Code
                         </button>
@@ -787,10 +830,7 @@ const ResultsView: React.FC<{
                       <div
                         key={index}
                         className="chapter-item enhanced"
-                        onClick={() => {
-                          // TODO: Add video player timestamp jumping
-                          console.log(`Jump to ${chapter.start}s`);
-                        }}
+                        onClick={() => jumpToTimestamp(chapter.start)}
                       >
                         <div className="chapter-header">
                           <div className="chapter-number">#{index + 1}</div>
