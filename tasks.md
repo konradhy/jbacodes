@@ -11,13 +11,8 @@ This task list is structured for a solo developer or a small team to build, test
 ---
 
 ## 1. Project Setup
-| ID | Task | Priority | Status |
-|----|------|----------|--------|
-| PS-1 | Create Git repository & commit initial scaffold | H | To Do |
-| PS-2 | Install Node.js ≥16, npm, and TypeScript globally | H | To Do |
-| PS-3 | Clone repo locally and run `npm install` | H | To Do |
-| PS-4 | Create `.env` template with placeholders | H | To Do |
-| PS-5 | Add pre-commit lint / format hooks (optional) | L | To Do |
+Take a look at existing set to to aclimatize yourself
+We're working in typescript
 
 ## 2. Backend – Core API
 | ID | Task | Priority | Status |

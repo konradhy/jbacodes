@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Transcriptor - AI-Powered Video & Audio Transcription</title>
+    
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-microphone-alt"></i>
+                    <h1>Simple Transcriptor</h1>
+                </div>
+                <nav class="nav">
+                    <button class="nav-btn active" data-view="home">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </button>
+                    <button class="nav-btn" data-view="upload">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>New Transcription</span>
+                    </button>
+                    <button class="nav-btn" data-view="sessions">
+                        <i class="fas fa-history"></i>
+                        <span>Sessions</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            
+            <!-- Home View -->
+            <section id="home-view" class="view active">
+                <div class="hero">
+                    <div class="hero-content">
+                        <h2>AI-Powered Transcription Made Simple</h2>
+                        <p>Upload your video or audio files and get accurate transcriptions with advanced AI features including speaker identification, auto-chapters, and intelligent JBA code detection.</p>
+                        <button class="btn btn-primary btn-large" id="start-transcription">
+                            <i class="fas fa-plus-circle"></i>
+                            Start New Transcription
+                        </button>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <div class="stat-number" id="total-sessions">0</div>
+                            <div class="stat-label">Total Sessions</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number" id="completed-sessions">0</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number" id="processing-sessions">0</div>
+                            <div class="stat-label">Processing</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-sessions">
+                    <div class="section-header">
+                        <h3>Recent Transcriptions</h3>
+                        <button class="btn btn-secondary" id="view-all-sessions">
+                            <i class="fas fa-list"></i>
+                            View All
+                        </button>
+                    </div>
+                    <div class="sessions-grid" id="recent-sessions-grid">
+                        <!-- Recent sessions will be populated here -->
+                        <div class="empty-state" id="empty-sessions">
+                            <i class="fas fa-file-audio"></i>
+                            <h4>No transcriptions yet</h4>
+                            <p>Upload your first video or audio file to get started</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload View -->
+            <section id="upload-view" class="view">
+                <div class="upload-section">
+                    <h2>Upload File for Transcription</h2>
+                    <p>Supported formats: MP4, MOV, AVI, MP3, WAV, M4A, AAC, OGG, WEBM (up to 4.5GB)</p>
+                    
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h3>Drag & drop your file here</h3>
+                            <p>or <button class="link-btn" id="browse-files">browse files</button></p>
+                            <div class="file-types">
+                                <span class="file-type">MP4</span>
+                                <span class="file-type">MP3</span>
+                                <span class="file-type">WAV</span>
+                                <span class="file-type">MOV</span>
+                                <span class="file-type">+More</span>
+                            </div>
+                        </div>
+                        <input type="file" id="file-input" accept="video/*,audio/*" hidden>
+                    </div>
+
+                    <div class="upload-progress" id="upload-progress">
+                        <div class="progress-header">
+                            <h4 id="progress-filename">Uploading file...</h4>
+                            <span class="progress-percentage" id="progress-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="progress-status" id="progress-status">Preparing upload...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sessions View -->
+            <section id="sessions-view" class="view">
+                <div class="sessions-section">
+                    <div class="section-header">
+                        <h2>All Sessions</h2>
+                        <div class="session-filters">
+                            <select id="status-filter" class="filter-select">
+                                <option value="">All Status</option>
+                                <option value="completed">Completed</option>
+                                <option value="processing">Processing</option>
+                                <option value="queued">Queued</option>
+                                <option value="error">Error</option>
+                            </select>
+                            <button class="btn btn-secondary" id="refresh-sessions">
+                                <i class="fas fa-sync-alt"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="sessions-list" id="sessions-list">
+                        <!-- Sessions will be populated here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results View -->
+            <section id="results-view" class="view">
+                <div class="results-section">
+                    <div class="results-header">
+                        <div class="session-info">
+                            <h2 id="results-filename">Transcription Results</h2>
+                            <div class="session-meta">
+                                <span class="session-status" id="results-status">Completed</span>
+                                <span class="session-date" id="results-date">Today</span>
+                                <span class="session-duration" id="results-duration">--:--</span>
+                            </div>
+                        </div>
+                        <div class="results-actions">
+                            <button class="btn btn-primary" id="force-reload-session">
+                                <i class="fas fa-sync-alt"></i>
+                                Force Reload
+                            </button>
+                            <button class="btn btn-secondary" id="export-transcript">
+                                <i class="fas fa-download"></i>
+                                Export
+                            </button>
+                            <button class="btn btn-secondary" id="copy-transcript">
+                                <i class="fas fa-copy"></i>
+                                Copy
+                            </button>
+                            <button class="btn btn-secondary" id="back-to-sessions">
+                                <i class="fas fa-arrow-left"></i>
+                                Back
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="results-content">
+                        <!-- Video Player -->
+                        <div class="video-section">
+                            <video id="video-player" class="video-player" controls>
+                                <source id="video-source" src="" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+
+                        <!-- Main Results Area -->
+                        <div class="results-main">
+                            <!-- Transcript Panel -->
+                            <div class="transcript-panel">
+                                <div class="panel-header">
+                                    <h3>Transcript</h3>
+                                    <div class="transcript-controls">
+                                        <button class="btn btn-small" id="highlight-jba">
+                                            <i class="fas fa-highlighter"></i>
+                                            Highlight JBA
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="transcript-content" id="transcript-content">
+                                    <!-- Transcript will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- JBA Codes Panel -->
+                            <div class="jba-panel">
+                                <div class="panel-header">
+                                    <h3>JBA Codes</h3>
+                                    <span class="jba-count" id="jba-count">0 found</span>
+                                </div>
+                                <div class="jba-list" id="jba-list">
+                                    <!-- JBA codes will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Features Panels -->
+                        <div class="features-panels">
+                            <!-- Speakers Panel -->
+                            <div class="feature-panel">
+                                <div class="panel-header">
+                                    <h4><i class="fas fa-users"></i> Speakers</h4>
+                                    <button class="panel-toggle" data-panel="speakers">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                <div class="panel-content" id="speakers-content">
+                                    <!-- Speakers will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Chapters Panel -->
+                            <div class="feature-panel">
+                                <div class="panel-header">
+                                    <h4><i class="fas fa-book-open"></i> Chapters</h4>
+                                    <button class="panel-toggle" data-panel="chapters">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                <div class="panel-content" id="chapters-content">
+                                    <!-- Chapters will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Highlights Panel -->
+                            <div class="feature-panel">
+                                <div class="panel-header">
+                                    <h4><i class="fas fa-star"></i> Key Highlights!</h4>
+                                    <button class="panel-toggle" data-panel="highlights">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                <div class="panel-content" id="highlights-content">
+                                    <!-- Highlights will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Entities Panel -->
+                            <div class="feature-panel">
+                                <div class="panel-header">
+                                    <h4><i class="fas fa-tags"></i> Entities</h4>
+                                    <button class="panel-toggle" data-panel="entities">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                <div class="panel-content" id="entities-content">
+                                    <!-- Entities will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <p>&copy; 2024 Simple Transcriptor. Powered by AssemblyAI.</p>
+                </div>
+                <div class="footer-links">
+                    <button class="link-btn" id="health-check">
+                        <i class="fas fa-heartbeat"></i>
+                        System Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notifications Container -->
+    <div id="notifications" class="notifications"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-circle-notch fa-spin"></i>
+            <p id="loading-message">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html> 

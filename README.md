@@ -8,13 +8,11 @@ A modern, user-friendly web application for transcribing videos and audio files 
 - **Multiple Format Support**: MP4, MOV, AVI, MP3, WAV, and more
 - **Real-time Progress**: Live updates during transcription process
 
-### 🎯 **Advanced AI Features**
+### 🎯 **Streamlined AI Features**
 - **Accurate Transcription**: High-quality speech-to-text conversion
-- **👥 Speaker Diarization**: Identify and separate different speakers
-- **📖 Auto Chapters**: Automatically generated content chapters
-- **⭐ Key Highlights**: Extract important topics and keywords
-- **🏷️ Entity Detection**: Identify names, places, organizations, etc.
-- **📊 Sentiment Analysis**: Understand emotional tone
+- **📖 Smart Chapters**: Automatically generated content chapters with enhanced navigation
+- **🎬 Chapter Navigation**: Click to jump to specific sections with timestamps
+- **⚡ Optimized Processing**: Faster transcription with focused features
 
 ### 🔍 **JBA Code Detection** (NEW!)
 - **Smart AI Detection**: Uses OpenRouter/Claude to find JBA codes in any format
@@ -111,12 +109,10 @@ A modern, user-friendly web application for transcribing videos and audio files 
    - Note the transcription ID for future reference
 
 3. **Review Results**
-   - View the complete transcript
-   - Explore additional insights:
-     - Speaker identification and segments
-     - Auto-generated chapters
-     - Key highlights and topics
-     - Detected entities (names, places, etc.)
+   - View the complete transcript with confidence scores
+   - Navigate through smart chapters with timestamps
+   - Jump to specific sections using chapter navigation
+   - Explore JBA codes if detected
 
 4. **Export Your Transcript**
    - Copy to clipboard with one click
@@ -150,10 +146,7 @@ Get transcription status and results.
   "text": "Your transcribed text here...",
   "confidence": 0.95,
   "words": [...],
-  "utterances": [...],
-  "chapters": [...],
-  "entities": [...],
-  "auto_highlights_result": {...}
+  "chapters": [...]
 }
 ```
 
@@ -247,13 +240,13 @@ simple-transcriptor/
 
 ## 🎯 Assembly AI Features
 
-This application leverages Assembly AI's advanced features:
+This application leverages Assembly AI's core features for optimal performance:
 
-- **Speaker Labels**: Identify who said what in multi-speaker recordings
-- **Auto Chapters**: Automatically segment content into logical chapters
-- **Sentiment Analysis**: Understand the emotional tone of the content
-- **Entity Detection**: Identify important entities like names, dates, organizations
-- **Auto Highlights**: Extract key topics and important moments
+- **High-Quality Transcription**: Accurate speech-to-text conversion with confidence scoring
+- **Smart Auto Chapters**: Automatically segment content into logical chapters (up to 15 chapters)
+- **Word-Level Timestamps**: Precise timing for every word in the transcript
+- **JBA Code Boosting**: Enhanced recognition for "JBA" variations and related terms
+- **Optimized Processing**: Streamlined feature set for faster transcription
 
 ## 🐛 Troubleshooting
 

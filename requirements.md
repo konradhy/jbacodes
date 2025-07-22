@@ -23,14 +23,11 @@ Simple Transcriptor is a modern web-based application for transcribing video and
 ### 2. Speech-to-Text Transcription
 **Requirement**: Convert audio/video to text using AssemblyAI
 - **Base Transcription**: High-quality speech-to-text conversion
-- **Advanced Features Required**:
-  - Speaker diarization (identify different speakers)
-  - Auto-generated chapters
-  - Sentiment analysis
-  - Entity detection (names, places, organizations)
-  - Auto highlights (key topics and moments)
+- **Streamlined Features**:
+  - Auto-generated chapters (up to 15 chapters)
   - Word-level timestamps
   - Confidence scores
+  - JBA code boosting with word variations
 - **Error Handling**: Retry logic for temporary API failures (502, 503, 504 errors)
 - **Progress Tracking**: Real-time status updates (queued → processing → completed/error)
 
@@ -101,16 +98,17 @@ Simple Transcriptor is a modern web-based application for transcribing video and
   - File type and size validation
   - Upload progress indication
 - **Results Interface**:
-  - Transcript display with formatting
-  - Video player integration
+  - Transcript display with formatting and confidence scores
+  - Video player integration with chapter navigation
+  - Enhanced chapters panel with timestamp jumping
   - JBA codes panel (collapsible)
   - Export options (copy, download)
   - Navigation between sessions
-- **Additional Feature Panels**:
-  - Speaker identification results
-  - Auto-generated chapters
-  - Key highlights
-  - Detected entities
+- **Enhanced Chapter Features**:
+  - Smart chapter grid layout
+  - Click-to-jump timestamp navigation
+  - Chapter numbering and duration display
+  - Interactive chapter cards with summaries
 - **Responsive Design**: Works on desktop and mobile devices
 
 ## Technical Requirements
